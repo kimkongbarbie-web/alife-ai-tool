@@ -431,202 +431,266 @@
   </div>
 </section>
 
-<!-- KOL CALCULATOR -->
+<!-- KOL CALCULATOR v2 -->
 <section class="kol-calc" id="calculator">
-  <h2 class="section-title">KOL 結算計算器</h2>
-  <p class="section-sub">上傳 CSV 檔案，自動計算 K 欄結算金額，排除已取消訂單</p>
+  <h2 class="section-title">KOL 對帳單產生器</h2>
+  <p class="section-sub">上傳 HB 社群賣場 CSV，填入開團資訊，一鍵產出可列印對帳單</p>
 
-  <div class="calc-wrapper">
-
-    <!-- Upload Zone -->
+  <!-- STEP 1: Upload -->
+  <div id="calcStep1" class="calc-wrapper">
     <div class="upload-zone" id="uploadZone">
       <div class="upload-icon">📂</div>
-      <div class="upload-text">拖曳 CSV 檔案到這裡</div>
+      <div class="upload-text">拖曳 HB 社群賣場匯出的 CSV</div>
       <div class="upload-sub">或點擊選擇檔案</div>
       <input type="file" id="fileInput" accept=".csv" style="display:none" />
       <button class="upload-btn" onclick="document.getElementById('fileInput').click()">選擇檔案</button>
     </div>
+    <div class="calc-error" id="calcError" style="display:none">⚠️ <span id="errorMsg"></span></div>
+  </div>
 
-    <!-- Result Area (hidden until file loaded) -->
-    <div class="calc-result" id="calcResult" style="display:none">
+  <!-- STEP 2: Sidebar + Invoice -->
+  <div id="calcStep2" class="invoice-builder" style="display:none">
 
-      <div class="result-header">
-        <span class="result-filename" id="resultFilename"></span>
-        <button class="reset-btn" onclick="resetCalc()">重新上傳</button>
+    <!-- Sidebar form -->
+    <div class="inv-sidebar no-print">
+      <div class="inv-sidebar-title">📝 填入開團資訊</div>
+
+      <div class="inv-fg">
+        <label>開團名稱</label>
+        <input id="f_campaign" type="text" placeholder="例：綺綺×Ollio 二團賣場" oninput="updateInvoice()">
+      </div>
+      <div class="inv-frow">
+        <div class="inv-fg">
+          <label>出帳日</label>
+          <input id="f_date" type="text" placeholder="2026.05.28" oninput="updateInvoice()">
+        </div>
+        <div class="inv-fg">
+          <label>撥款日</label>
+          <input id="f_paydate" type="text" placeholder="2026.06.05" oninput="updateInvoice()">
+        </div>
+      </div>
+      <div class="inv-fg">
+        <label>合作區間</label>
+        <input id="f_period" type="text" placeholder="2026.04.07~2026.04.13" oninput="updateInvoice()">
+      </div>
+      <div class="inv-fg">
+        <label>合作平台 / KOL 名稱</label>
+        <textarea id="f_platform" rows="2" placeholder="ChiChi 綺綺 | Ting Chen&#10;(IG: chichi_makeup.lips)" oninput="updateInvoice()"></textarea>
+      </div>
+      <div class="inv-fg">
+        <label>特殊優惠（每行一條）</label>
+        <textarea id="f_offers" rows="4" placeholder="1.滿2000超取免運&#10;2.前100名下單贈品牌手拿鏡" oninput="updateInvoice()"></textarea>
+      </div>
+      <div class="inv-fg">
+        <label>KOL 分潤 %（手動填寫）</label>
+        <input id="f_rate" type="number" min="0" max="100" step="0.1" placeholder="22" oninput="updateInvoice()">
       </div>
 
-      <div class="result-cards">
-        <div class="result-card card-green">
-          <div class="result-num" id="validCount">—</div>
-          <div class="result-label">有效行數</div>
-        </div>
-        <div class="result-card card-red">
-          <div class="result-num" id="excludedCount">—</div>
-          <div class="result-label">排除行數（已取消）</div>
-        </div>
-        <div class="result-card card-total">
-          <div class="result-num total-num" id="totalAmount">—</div>
-          <div class="result-label">K 欄結算總金額</div>
-        </div>
-      </div>
+      <div class="inv-summary" id="invSummary"></div>
 
-      <div class="result-note" id="resultNote"></div>
+      <button class="inv-print-btn" onclick="window.print()">🖨️ 列印 / 儲存 PDF</button>
+      <button class="inv-reset-btn" onclick="resetCalc()">重新上傳 CSV</button>
     </div>
 
-    <!-- Error Area -->
-    <div class="calc-error" id="calcError" style="display:none">
-      <span>⚠️ </span><span id="errorMsg"></span>
+    <!-- Invoice preview -->
+    <div class="inv-preview-wrap">
+      <div class="inv-doc" id="invoiceDoc"></div>
     </div>
 
   </div>
 </section>
 
 <style>
+  /* ── section bg ── */
   .kol-calc { background: linear-gradient(135deg, #f8f0ff, #fff5fb); }
+  .calc-wrapper { max-width: 680px; margin: 0 auto; }
 
-  .calc-wrapper { max-width: 720px; margin: 0 auto; }
-
+  /* ── upload zone ── */
   .upload-zone {
-    border: 2.5px dashed #f9a8d4;
-    border-radius: var(--radius);
-    background: white;
-    padding: 56px 32px;
-    text-align: center;
-    cursor: pointer;
+    border: 2.5px dashed #f9a8d4; border-radius: var(--radius);
+    background: white; padding: 56px 32px; text-align: center; cursor: pointer;
     transition: border-color .2s, background .2s;
   }
-  .upload-zone:hover, .upload-zone.drag-over {
-    border-color: var(--pink-dark);
-    background: var(--pink-light);
-  }
+  .upload-zone:hover, .upload-zone.drag-over { border-color: var(--pink-dark); background: var(--pink-light); }
   .upload-icon { font-size: 3rem; margin-bottom: 12px; }
-  .upload-text { font-size: 1.15rem; font-weight: 700; color: var(--dark); margin-bottom: 6px; }
+  .upload-text { font-size: 1.15rem; font-weight: 700; margin-bottom: 6px; }
   .upload-sub { color: var(--gray); font-size: 0.9rem; margin-bottom: 24px; }
   .upload-btn {
-    background: linear-gradient(135deg, #ec4899, #a855f7);
-    color: white; border: none; padding: 12px 28px;
-    border-radius: 99px; font-size: 0.95rem; font-weight: 700;
-    cursor: pointer; transition: opacity .2s;
+    background: linear-gradient(135deg, #ec4899, #a855f7); color: white; border: none;
+    padding: 12px 28px; border-radius: 99px; font-size: 0.95rem; font-weight: 700; cursor: pointer;
   }
-  .upload-btn:hover { opacity: 0.88; }
-
-  .calc-result {
-    background: white; border-radius: var(--radius);
-    border: 1px solid #fce7f3;
-    box-shadow: var(--card-shadow);
-    padding: 36px;
-  }
-  .result-header {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 28px; flex-wrap: wrap; gap: 10px;
-  }
-  .result-filename {
-    font-size: 0.9rem; color: var(--gray);
-    background: var(--light); padding: 6px 14px;
-    border-radius: 8px; border: 1px solid #e5e7eb;
-    font-family: monospace;
-  }
-  .reset-btn {
-    background: none; border: 2px solid #fbcfe8;
-    color: var(--pink-dark); padding: 6px 18px;
-    border-radius: 99px; font-size: 0.85rem; font-weight: 600;
-    cursor: pointer; transition: background .2s;
-  }
-  .reset-btn:hover { background: var(--pink-light); }
-
-  .result-cards {
-    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;
-    margin-bottom: 20px;
-  }
-  .result-card {
-    border-radius: 14px; padding: 24px 18px; text-align: center;
-  }
-  .card-green { background: #f0fdf4; border: 1.5px solid #bbf7d0; }
-  .card-red { background: #fff7ed; border: 1.5px solid #fed7aa; }
-  .card-total {
-    background: linear-gradient(135deg, #fce7f3, #ede9fe);
-    border: 1.5px solid #f9a8d4;
-  }
-  .result-num {
-    font-size: 1.8rem; font-weight: 900;
-    color: var(--dark); line-height: 1.2; margin-bottom: 6px;
-  }
-  .total-num {
-    font-size: 1.5rem;
-    background: linear-gradient(135deg, #be185d, #7c3aed);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  }
-  .result-label { font-size: 0.82rem; color: var(--gray); font-weight: 600; }
-
-  .result-note {
-    font-size: 0.82rem; color: var(--gray);
-    background: var(--light); border-radius: 8px;
-    padding: 10px 16px; border: 1px solid #e5e7eb;
-    font-family: monospace; line-height: 1.8;
-  }
+  .upload-btn:hover { opacity: .88; }
   .calc-error {
-    background: #fff7ed; border: 1.5px solid #fed7aa;
-    border-radius: 12px; padding: 18px 24px;
-    color: #92400e; font-size: 0.92rem; margin-top: 16px;
+    margin-top: 16px; background: #fff7ed; border: 1.5px solid #fed7aa;
+    border-radius: 12px; padding: 16px 20px; color: #92400e; font-size: .92rem;
   }
 
-  @media (max-width: 600px) {
-    .result-cards { grid-template-columns: 1fr; }
-    .total-num { font-size: 1.8rem; }
+  /* ── builder layout ── */
+  .invoice-builder {
+    display: grid; grid-template-columns: 272px 1fr;
+    gap: 28px; align-items: start; max-width: 1180px; margin: 0 auto;
+  }
+
+  /* ── sidebar ── */
+  .inv-sidebar {
+    background: white; border-radius: 18px; border: 1px solid #fce7f3;
+    box-shadow: 0 4px 24px rgba(244,114,182,.1); padding: 24px;
+    position: sticky; top: 80px;
+  }
+  .inv-sidebar-title { font-weight: 800; font-size: 1rem; margin-bottom: 18px; }
+  .inv-fg { margin-bottom: 13px; }
+  .inv-frow { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .inv-fg label { display: block; font-size: .78rem; font-weight: 600; color: var(--gray); margin-bottom: 5px; }
+  .inv-fg input, .inv-fg textarea {
+    width: 100%; border: 1.5px solid #e5e7eb; border-radius: 8px;
+    padding: 8px 10px; font-size: .88rem; font-family: inherit;
+    transition: border-color .2s; resize: vertical; color: var(--dark);
+  }
+  .inv-fg input:focus, .inv-fg textarea:focus { outline: none; border-color: var(--pink); }
+  .inv-summary {
+    background: var(--light); border-radius: 10px; padding: 12px 14px;
+    margin: 14px 0; font-size: .82rem; line-height: 2.1; border: 1px solid #e5e7eb;
+  }
+  .inv-summary .s-total { font-weight: 800; font-size: 1rem; color: var(--pink-dark); }
+  .inv-print-btn {
+    width: 100%; border: none; background: linear-gradient(135deg,#ec4899,#a855f7);
+    color: white; padding: 13px; border-radius: 10px;
+    font-size: .95rem; font-weight: 700; cursor: pointer; margin-bottom: 10px;
+  }
+  .inv-print-btn:hover { opacity: .88; }
+  .inv-reset-btn {
+    width: 100%; background: none; border: 2px solid #fbcfe8; color: var(--pink-dark);
+    padding: 10px; border-radius: 10px; font-size: .85rem; font-weight: 600; cursor: pointer;
+  }
+  .inv-reset-btn:hover { background: var(--pink-light); }
+
+  /* ── invoice doc ── */
+  .inv-preview-wrap { overflow-x: auto; }
+  .inv-doc {
+    background: white; border-radius: 12px; box-shadow: 0 8px 40px rgba(0,0,0,.12);
+    padding: 28px 32px; min-width: 580px;
+    font-family: "PingFang TC","Microsoft JhengHei","Noto Sans TC",sans-serif;
+    font-size: 13px; line-height: 1.5; color: #1a1a1a;
+  }
+
+  /* letterhead */
+  .i-head { display: flex; align-items: flex-start; gap: 18px; margin-bottom: 12px; }
+  .i-logo {
+    font-family: Georgia,serif; font-size: 1.5rem; font-weight: 400; font-style: italic;
+    color: #be185d; line-height: 1.1; border-right: 1px solid #ccc;
+    padding-right: 16px; min-width: 70px;
+  }
+  .i-logo small { display: block; font-size: .42rem; color: #999; font-style: normal; letter-spacing: .5px; }
+  .i-company { font-size: 1.3rem; font-weight: 700; margin-bottom: 3px; }
+  .i-addr { font-size: .76rem; color: #555; line-height: 1.65; }
+
+  /* title bar */
+  .i-titlebar {
+    background: #f2f2f2; text-align: center; padding: 9px 12px;
+    margin: 12px 0; font-size: 1rem; font-weight: 700; border: 1px solid #ddd;
+  }
+
+  /* info grid */
+  .i-infogrid {
+    display: grid; grid-template-columns: 1fr 190px;
+    border: 1px solid #ddd; margin-bottom: 16px;
+  }
+  .i-infogrid .i-left { border-right: 1px solid #ddd; }
+  .i-tbl { width: 100%; border-collapse: collapse; }
+  .i-tbl td { padding: 6px 9px; border-bottom: 1px solid #ddd; font-size: .81rem; vertical-align: top; }
+  .i-tbl tr:last-child td { border-bottom: none; }
+  .i-tbl .lbl { font-weight: 600; white-space: nowrap; background: #fafafa; width: 70px; text-align: center; }
+  .i-tbl .sec-hd td { background: #ebebeb !important; text-align: center; font-weight: 700; font-size: .82rem; }
+  .i-tbl .hi td { background: #e8e8e8 !important; }
+  .i-tbl .hi td:last-child { font-weight: 800; font-size: .98rem; color: #be185d; }
+  .i-tbl .r { text-align: right; font-weight: 700; }
+  .i-spacer td { height: 18px; border-bottom: 1px solid #ddd !important; }
+
+  /* product table */
+  .i-ptbl { width: 100%; border-collapse: collapse; border: 1px solid #ddd; margin-bottom: 0; }
+  .i-ptbl th {
+    background: #f2f2f2; padding: 7px 9px; font-size: .81rem; font-weight: 700;
+    border: 1px solid #ddd; text-align: center;
+  }
+  .i-ptbl td { padding: 6px 9px; border: 1px solid #ddd; font-size: .81rem; }
+  .i-ptbl .nr { text-align: right; }
+  .i-ptbl .nc { text-align: center; }
+  .i-ptbl tbody tr:nth-child(even) td { background: #fafafa; }
+  .i-ptbl .tot-row td { background: #f2f2f2 !important; font-weight: 700; }
+
+  /* footer */
+  .i-footer { margin-top: 14px; font-size: .77rem; line-height: 1.9; color: #333; }
+  .i-footer p { margin: 0; }
+  .i-hr { border: none; border-top: 1px solid #ddd; margin: 9px 0; }
+  .i-bottom { display: flex; align-items: flex-end; justify-content: space-between; margin-top: 14px; }
+  .i-stamp {
+    width: 92px; height: 92px; border-radius: 50%; border: 2.5px solid #be185d;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; font-size: .56rem; color: #be185d; font-weight: 700;
+    line-height: 1.55; opacity: .65;
+  }
+  .i-datetbl { border-collapse: collapse; }
+  .i-datetbl td { border: 1px solid #ddd; padding: 6px 12px; font-size: .81rem; }
+  .i-datetbl .dlbl { background: #f2f2f2; font-weight: 600; }
+
+  /* ── print ── */
+  @media print {
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    nav, .hero, .stats, .tools, .how, .tech, footer { display: none !important; }
+    .kol-calc { padding: 0 !important; background: white !important; }
+    .kol-calc .section-title, .kol-calc .section-sub { display: none !important; }
+    #calcStep1 { display: none !important; }
+    .invoice-builder { display: block !important; }
+    .no-print { display: none !important; }
+    .inv-preview-wrap { overflow: visible !important; }
+    .inv-doc { box-shadow: none !important; border-radius: 0 !important; padding: 0 !important; min-width: 0 !important; }
+    @page { margin: 14mm; size: A4 portrait; }
+  }
+
+  @media (max-width: 900px) {
+    .invoice-builder { grid-template-columns: 1fr !important; }
+    .inv-sidebar { position: static; }
   }
 </style>
 
 <script>
-(function() {
-  const uploadZone = document.getElementById('uploadZone');
-  const fileInput  = document.getElementById('fileInput');
+(function(){
+  let _prods = [], _total = 0;
 
-  // Drag-and-drop
-  uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
-  uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
-  uploadZone.addEventListener('drop', e => {
-    e.preventDefault(); uploadZone.classList.remove('drag-over');
-    const f = e.dataTransfer.files[0];
-    if (f) processFile(f);
-  });
-  uploadZone.addEventListener('click', e => {
-    if (e.target !== document.querySelector('.upload-btn')) fileInput.click();
-  });
-  fileInput.addEventListener('change', () => {
-    if (fileInput.files[0]) processFile(fileInput.files[0]);
-  });
+  const zone = document.getElementById('uploadZone');
+  const fi   = document.getElementById('fileInput');
 
-  function showError(msg) {
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault(); zone.classList.remove('drag-over');
+    if (e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]);
+  });
+  zone.addEventListener('click', e => { if (!e.target.classList.contains('upload-btn')) fi.click(); });
+  fi.addEventListener('change', () => { if (fi.files[0]) processFile(fi.files[0]); });
+
+  function readText(file, enc, cb) {
+    const r = new FileReader();
+    r.onload = e => cb(e.target.result);
+    r.readAsText(file, enc);
+  }
+
+  function processFile(file) {
+    if (!file.name.toLowerCase().endsWith('.csv')) { showErr('請上傳 .csv 格式的檔案'); return; }
+    readText(file, 'UTF-8', t => { if (t.includes('')) readText(file, 'Big5', t2 => build(t2)); else build(t); });
+  }
+
+  function showErr(msg) {
     document.getElementById('calcError').style.display = 'block';
     document.getElementById('errorMsg').textContent = msg;
-    document.getElementById('calcResult').style.display = 'none';
   }
 
   window.resetCalc = function() {
-    document.getElementById('calcResult').style.display = 'none';
+    document.getElementById('calcStep1').style.display = 'block';
+    document.getElementById('calcStep2').style.display = 'none';
     document.getElementById('calcError').style.display = 'none';
-    document.getElementById('uploadZone').style.display = 'block';
-    fileInput.value = '';
+    fi.value = ''; _prods = []; _total = 0;
   };
-
-  function processFile(file) {
-    if (!file.name.toLowerCase().endsWith('.csv')) {
-      showError('請上傳 .csv 格式的檔案'); return;
-    }
-    readWithEncoding(file, 'UTF-8', (text) => {
-      if (text.includes('�')) {
-        readWithEncoding(file, 'Big5', (text2) => runCalc(file.name, text2));
-      } else {
-        runCalc(file.name, text);
-      }
-    });
-  }
-
-  function readWithEncoding(file, enc, cb) {
-    const reader = new FileReader();
-    reader.onload = e => cb(e.target.result);
-    reader.readAsText(file, enc);
-  }
 
   function parseCSV(text) {
     const rows = [];
@@ -636,64 +700,175 @@
       for (let i = 0; i < line.length; i++) {
         const c = line[i];
         if (c === '"') { if (inQ && line[i+1]==='"') { cur+='"'; i++; } else inQ=!inQ; }
-        else if (c === ',' && !inQ) { cols.push(cur); cur=''; }
+        else if (c===',' && !inQ) { cols.push(cur.trim()); cur=''; }
         else cur += c;
       }
-      cols.push(cur);
-      rows.push(cols);
+      cols.push(cur.trim()); rows.push(cols);
     }
     return rows;
   }
 
-  function runCalc(filename, text) {
-    document.getElementById('calcError').style.display = 'none';
+  function clean(s) { return (s||'').replace(/"/g,'').trim(); }
+  function toNum(s) { return parseFloat(clean(s).replace(/,/g,'')) || 0; }
+  function fmt(n) { return Math.round(n).toLocaleString('zh-TW'); }
+
+  function build(text) {
     const rows = parseCSV(text);
-    if (rows.length < 2) { showError('CSV 內容似乎是空的，請確認檔案是否正確'); return; }
+    if (rows.length < 2) { showErr('CSV 內容是空的，請確認檔案'); return; }
 
-    const header = rows[0];
-    let fIdx = 5, kIdx = 10; // default: F=col5, K=col10
-
-    // Try to match by header name
-    header.forEach((h, i) => {
-      const clean = h.replace(/"/g,'').trim();
-      if (clean === '訂單狀態') fIdx = i;
-      if (clean === '商品結算金額') kIdx = i;
+    const hdr = rows[0];
+    let nIdx=4, qIdx=6, pIdx=-1, sIdx=5, kIdx=10;
+    hdr.forEach((h,i) => {
+      const c = clean(h);
+      if (/^(商品名稱|品名)$/.test(c)) nIdx=i;
+      if (/^(數量|商品數量)$/.test(c)) qIdx=i;
+      if (/^(訂單狀態|狀態)$/.test(c)) sIdx=i;
+      if (/^(商品結算金額|結算金額)$/.test(c)) kIdx=i;
+      if (/^(單價|商品單價|售價|商品金額|團購價格)$/.test(c)) pIdx=i;
     });
 
-    const maxIdx = Math.max(fIdx, kIdx);
-    if (header.length <= maxIdx) {
-      showError(`CSV 欄位不足，需要至少 ${maxIdx+1} 欄（目前只有 ${header.length} 欄）`); return;
+    const isHdr = isNaN(parseFloat(clean(hdr[kIdx]).replace(/,/g,'')));
+    const data  = isHdr ? rows.slice(1) : rows;
+    const map   = new Map();
+    let total   = 0;
+
+    for (const row of data) {
+      if (clean(row[sIdx]) === '已取消') continue;
+      const name = clean(row[nIdx]); if (!name) continue;
+      const qty  = Math.max(1, parseInt(clean(row[qIdx])) || 1);
+      const k    = toNum(row[kIdx]);
+      const pr   = pIdx >= 0 ? toNum(row[pIdx]) : 0;
+      if (!map.has(name)) map.set(name, { name, qty:0, sub:0, pr });
+      const p = map.get(name);
+      p.qty += qty; p.sub += k;
+      if (!p.pr && pr) p.pr = pr;
+      total += k;
     }
+    for (const [,p] of map) if (!p.pr && p.qty>0) p.pr = Math.round(p.sub/p.qty);
 
-    // Check if first row is header (K column is not a number)
-    const kHead = (header[kIdx]||'').replace(/"/g,'').replace(/,/g,'').trim();
-    const dataRows = isNaN(parseFloat(kHead)) ? rows.slice(1) : rows;
+    _prods = Array.from(map.values());
+    _total = total;
 
-    let total = 0, valid = 0, excluded = 0, skipped = 0;
-    for (const row of dataRows) {
-      if (row.length <= maxIdx) { skipped++; continue; }
-      const fVal = (row[fIdx]||'').replace(/"/g,'').trim();
-      const kRaw = (row[kIdx]||'').replace(/"/g,'').replace(/,/g,'').replace(/NT\$?/,'').trim();
-      if (fVal === '已取消') { excluded++; continue; }
-      const amt = parseFloat(kRaw);
-      if (!isNaN(amt)) { total += amt; valid++; }
-      else { valid++; } // blank sub-row: count but no amount
-    }
+    const now = new Date();
+    const ds = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
+    if (!document.getElementById('f_date').value) document.getElementById('f_date').value = ds;
 
-    // Show results
-    document.getElementById('uploadZone').style.display = 'none';
-    document.getElementById('calcResult').style.display = 'block';
-    document.getElementById('resultFilename').textContent = filename;
-    document.getElementById('validCount').textContent = valid.toLocaleString();
-    document.getElementById('excludedCount').textContent = excluded.toLocaleString();
-    document.getElementById('totalAmount').textContent =
-      'NT$ ' + Math.round(total).toLocaleString();
-    document.getElementById('resultNote').innerHTML =
-      `資料總行數：${dataRows.length} 行　｜　` +
-      `有效：${valid} 行　｜　排除（已取消）：${excluded} 行` +
-      (skipped ? `　｜　略過（欄位不足）：${skipped} 行` : '') +
-      `<br>欄位對應：F 欄（第 ${fIdx+1} 欄）= 訂單狀態　｜　K 欄（第 ${kIdx+1} 欄）= 商品結算金額`;
+    document.getElementById('calcStep1').style.display = 'none';
+    document.getElementById('calcStep2').style.display = 'grid';
+    updateInvoice();
   }
+
+  function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function fd(s) { return s ? esc(s) : ''; }
+
+  window.updateInvoice = function() {
+    const campaign = document.getElementById('f_campaign').value.trim() || '（開團名稱）';
+    const date     = document.getElementById('f_date').value.trim();
+    const period   = document.getElementById('f_period').value.trim();
+    const platform = document.getElementById('f_platform').value.trim().replace(/\n/g,'<br>');
+    const offers   = document.getElementById('f_offers').value.trim();
+    const rate     = parseFloat(document.getElementById('f_rate').value) || 0;
+    const paydate  = document.getElementById('f_paydate').value.trim();
+
+    const comm    = Math.round(_total * rate / 100);
+    const b4tax   = Math.floor(comm / 1.05);
+    const tax     = comm - b4tax;
+
+    const offersHtml = offers ? offers.split('\n').filter(l=>l.trim()).join('<br>') : '';
+
+    const pRows = _prods.map(p => `
+      <tr>
+        <td>${esc(p.name)}</td>
+        <td class="nr">$ ${fmt(p.pr)}</td>
+        <td class="nc">${fmt(p.qty)}</td>
+        <td class="nr">$ &nbsp;${fmt(p.sub)}</td>
+      </tr>`).join('');
+
+    document.getElementById('invoiceDoc').innerHTML = `
+      <div class="i-head">
+        <div class="i-logo">A'life<small>Good day．Good life</small></div>
+        <div>
+          <div class="i-company">有森意歐美代購工作室</div>
+          <div class="i-addr">
+            高雄市左營區文瑞路53號13樓<br>
+            13 F., No. 53, Wenrui Rd., Zuoying Dist., Kaohsiung City 81367, Taiwan (R.O.C.)<br>
+            統編91445880
+          </div>
+        </div>
+      </div>
+
+      <div class="i-titlebar">對帳單 - 開團名稱 ｜ ${esc(campaign)}</div>
+
+      <div class="i-infogrid">
+        <div class="i-left">
+          <table class="i-tbl">
+            <tr class="sec-hd"><td colspan="2">開團明細</td></tr>
+            <tr><td class="lbl">出帳日</td><td>${fd(date)}</td></tr>
+            <tr><td class="lbl">合作區間</td><td>${fd(period)}</td></tr>
+            <tr><td class="lbl">合作平台</td><td>${platform||''}</td></tr>
+            <tr><td class="lbl">特殊優惠</td><td>${offersHtml||''}</td></tr>
+          </table>
+        </div>
+        <div>
+          <table class="i-tbl">
+            <tr class="sec-hd"><td colspan="2">分潤小計</td></tr>
+            <tr><td class="lbl">銷售金額</td><td class="r">$ ${fmt(_total)}</td></tr>
+            <tr><td class="lbl">分潤%數</td><td class="r">${rate ? rate+'%' : ''}</td></tr>
+            <tr class="i-spacer"><td colspan="2"></td></tr>
+            <tr class="hi"><td class="lbl">分潤金額</td><td class="r">$${fmt(comm)}</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <table class="i-ptbl">
+        <thead>
+          <tr>
+            <th style="text-align:left;width:42%">商品名稱</th>
+            <th style="width:17%">團購價格</th>
+            <th style="width:14%">銷售數量</th>
+            <th style="width:27%">小計</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${pRows}
+          <tr class="tot-row">
+            <td colspan="3" style="text-align:right">原始金額</td>
+            <td class="nr">$ &nbsp;${fmt(_total)}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="i-footer">
+        <p>付款方式</p>
+        <p>勞報單(92)：</p>
+        <p>1. 請提供身分證正、反面影本，以利申報所得。</p>
+        <p>2. 請提供銀行或郵局存摺（含有銀行或郵局名稱、撥款帳號及帳戶名稱）的影本，俾利撥款。</p>
+        <p>發票：</p>
+        <p>1. 請於結帳當月開立發票，有森意歐美代購工作室將於次月結賬日(5日)匯款。</p>
+        <hr class="i-hr">
+        <p>發票抬頭：有森意歐美代購工作室</p>
+        <p>發票統編：91445880</p>
+        <p>未稅金額：$${fmt(b4tax)}</p>
+        <p>稅額：$${fmt(tax)}</p>
+        <p><strong>發票金額：$${fmt(comm)}</strong></p>
+        <hr class="i-hr">
+        <p>匯款銀行：台新銀行(812)</p>
+        <p>帳號：2015-01-0005859-0</p>
+        <p>戶名：小禾畔有限公司</p>
+        <div class="i-bottom">
+          <div class="i-stamp">有森意歐美<br>代購工作室<br>統一編號<br>91445880<br>0980065714</div>
+          <table class="i-datetbl">
+            <tr><td class="dlbl">出帳日</td><td>${fd(date)}</td></tr>
+            <tr><td class="dlbl">撥款日</td><td>${fd(paydate)}</td></tr>
+          </table>
+        </div>
+      </div>`;
+
+    document.getElementById('invSummary').innerHTML =
+      `銷售金額：<strong>NT$ ${fmt(_total)}</strong><br>` +
+      `分潤 ${rate||'—'}%：<span class="s-total">NT$ ${fmt(comm)}</span><br>` +
+      `未稅 NT$ ${fmt(b4tax)}　稅額 NT$ ${fmt(tax)}`;
+  };
 })();
 </script>
 
