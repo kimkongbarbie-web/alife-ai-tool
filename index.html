@@ -431,6 +431,272 @@
   </div>
 </section>
 
+<!-- KOL CALCULATOR -->
+<section class="kol-calc" id="calculator">
+  <h2 class="section-title">KOL 結算計算器</h2>
+  <p class="section-sub">上傳 CSV 檔案，自動計算 K 欄結算金額，排除已取消訂單</p>
+
+  <div class="calc-wrapper">
+
+    <!-- Upload Zone -->
+    <div class="upload-zone" id="uploadZone">
+      <div class="upload-icon">📂</div>
+      <div class="upload-text">拖曳 CSV 檔案到這裡</div>
+      <div class="upload-sub">或點擊選擇檔案</div>
+      <input type="file" id="fileInput" accept=".csv" style="display:none" />
+      <button class="upload-btn" onclick="document.getElementById('fileInput').click()">選擇檔案</button>
+    </div>
+
+    <!-- Result Area (hidden until file loaded) -->
+    <div class="calc-result" id="calcResult" style="display:none">
+
+      <div class="result-header">
+        <span class="result-filename" id="resultFilename"></span>
+        <button class="reset-btn" onclick="resetCalc()">重新上傳</button>
+      </div>
+
+      <div class="result-cards">
+        <div class="result-card card-green">
+          <div class="result-num" id="validCount">—</div>
+          <div class="result-label">有效行數</div>
+        </div>
+        <div class="result-card card-red">
+          <div class="result-num" id="excludedCount">—</div>
+          <div class="result-label">排除行數（已取消）</div>
+        </div>
+        <div class="result-card card-total">
+          <div class="result-num total-num" id="totalAmount">—</div>
+          <div class="result-label">K 欄結算總金額</div>
+        </div>
+      </div>
+
+      <div class="result-note" id="resultNote"></div>
+    </div>
+
+    <!-- Error Area -->
+    <div class="calc-error" id="calcError" style="display:none">
+      <span>⚠️ </span><span id="errorMsg"></span>
+    </div>
+
+  </div>
+</section>
+
+<style>
+  .kol-calc { background: linear-gradient(135deg, #f8f0ff, #fff5fb); }
+
+  .calc-wrapper { max-width: 720px; margin: 0 auto; }
+
+  .upload-zone {
+    border: 2.5px dashed #f9a8d4;
+    border-radius: var(--radius);
+    background: white;
+    padding: 56px 32px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+  }
+  .upload-zone:hover, .upload-zone.drag-over {
+    border-color: var(--pink-dark);
+    background: var(--pink-light);
+  }
+  .upload-icon { font-size: 3rem; margin-bottom: 12px; }
+  .upload-text { font-size: 1.15rem; font-weight: 700; color: var(--dark); margin-bottom: 6px; }
+  .upload-sub { color: var(--gray); font-size: 0.9rem; margin-bottom: 24px; }
+  .upload-btn {
+    background: linear-gradient(135deg, #ec4899, #a855f7);
+    color: white; border: none; padding: 12px 28px;
+    border-radius: 99px; font-size: 0.95rem; font-weight: 700;
+    cursor: pointer; transition: opacity .2s;
+  }
+  .upload-btn:hover { opacity: 0.88; }
+
+  .calc-result {
+    background: white; border-radius: var(--radius);
+    border: 1px solid #fce7f3;
+    box-shadow: var(--card-shadow);
+    padding: 36px;
+  }
+  .result-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 28px; flex-wrap: wrap; gap: 10px;
+  }
+  .result-filename {
+    font-size: 0.9rem; color: var(--gray);
+    background: var(--light); padding: 6px 14px;
+    border-radius: 8px; border: 1px solid #e5e7eb;
+    font-family: monospace;
+  }
+  .reset-btn {
+    background: none; border: 2px solid #fbcfe8;
+    color: var(--pink-dark); padding: 6px 18px;
+    border-radius: 99px; font-size: 0.85rem; font-weight: 600;
+    cursor: pointer; transition: background .2s;
+  }
+  .reset-btn:hover { background: var(--pink-light); }
+
+  .result-cards {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;
+    margin-bottom: 20px;
+  }
+  .result-card {
+    border-radius: 14px; padding: 24px 18px; text-align: center;
+  }
+  .card-green { background: #f0fdf4; border: 1.5px solid #bbf7d0; }
+  .card-red { background: #fff7ed; border: 1.5px solid #fed7aa; }
+  .card-total {
+    background: linear-gradient(135deg, #fce7f3, #ede9fe);
+    border: 1.5px solid #f9a8d4;
+  }
+  .result-num {
+    font-size: 1.8rem; font-weight: 900;
+    color: var(--dark); line-height: 1.2; margin-bottom: 6px;
+  }
+  .total-num {
+    font-size: 1.5rem;
+    background: linear-gradient(135deg, #be185d, #7c3aed);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .result-label { font-size: 0.82rem; color: var(--gray); font-weight: 600; }
+
+  .result-note {
+    font-size: 0.82rem; color: var(--gray);
+    background: var(--light); border-radius: 8px;
+    padding: 10px 16px; border: 1px solid #e5e7eb;
+    font-family: monospace; line-height: 1.8;
+  }
+  .calc-error {
+    background: #fff7ed; border: 1.5px solid #fed7aa;
+    border-radius: 12px; padding: 18px 24px;
+    color: #92400e; font-size: 0.92rem; margin-top: 16px;
+  }
+
+  @media (max-width: 600px) {
+    .result-cards { grid-template-columns: 1fr; }
+    .total-num { font-size: 1.8rem; }
+  }
+</style>
+
+<script>
+(function() {
+  const uploadZone = document.getElementById('uploadZone');
+  const fileInput  = document.getElementById('fileInput');
+
+  // Drag-and-drop
+  uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+  uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+  uploadZone.addEventListener('drop', e => {
+    e.preventDefault(); uploadZone.classList.remove('drag-over');
+    const f = e.dataTransfer.files[0];
+    if (f) processFile(f);
+  });
+  uploadZone.addEventListener('click', e => {
+    if (e.target !== document.querySelector('.upload-btn')) fileInput.click();
+  });
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files[0]) processFile(fileInput.files[0]);
+  });
+
+  function showError(msg) {
+    document.getElementById('calcError').style.display = 'block';
+    document.getElementById('errorMsg').textContent = msg;
+    document.getElementById('calcResult').style.display = 'none';
+  }
+
+  window.resetCalc = function() {
+    document.getElementById('calcResult').style.display = 'none';
+    document.getElementById('calcError').style.display = 'none';
+    document.getElementById('uploadZone').style.display = 'block';
+    fileInput.value = '';
+  };
+
+  function processFile(file) {
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      showError('請上傳 .csv 格式的檔案'); return;
+    }
+    readWithEncoding(file, 'UTF-8', (text) => {
+      if (text.includes('�')) {
+        readWithEncoding(file, 'Big5', (text2) => runCalc(file.name, text2));
+      } else {
+        runCalc(file.name, text);
+      }
+    });
+  }
+
+  function readWithEncoding(file, enc, cb) {
+    const reader = new FileReader();
+    reader.onload = e => cb(e.target.result);
+    reader.readAsText(file, enc);
+  }
+
+  function parseCSV(text) {
+    const rows = [];
+    for (const line of text.split(/\r?\n/)) {
+      if (!line.trim()) continue;
+      const cols = []; let inQ = false; let cur = '';
+      for (let i = 0; i < line.length; i++) {
+        const c = line[i];
+        if (c === '"') { if (inQ && line[i+1]==='"') { cur+='"'; i++; } else inQ=!inQ; }
+        else if (c === ',' && !inQ) { cols.push(cur); cur=''; }
+        else cur += c;
+      }
+      cols.push(cur);
+      rows.push(cols);
+    }
+    return rows;
+  }
+
+  function runCalc(filename, text) {
+    document.getElementById('calcError').style.display = 'none';
+    const rows = parseCSV(text);
+    if (rows.length < 2) { showError('CSV 內容似乎是空的，請確認檔案是否正確'); return; }
+
+    const header = rows[0];
+    let fIdx = 5, kIdx = 10; // default: F=col5, K=col10
+
+    // Try to match by header name
+    header.forEach((h, i) => {
+      const clean = h.replace(/"/g,'').trim();
+      if (clean === '訂單狀態') fIdx = i;
+      if (clean === '商品結算金額') kIdx = i;
+    });
+
+    const maxIdx = Math.max(fIdx, kIdx);
+    if (header.length <= maxIdx) {
+      showError(`CSV 欄位不足，需要至少 ${maxIdx+1} 欄（目前只有 ${header.length} 欄）`); return;
+    }
+
+    // Check if first row is header (K column is not a number)
+    const kHead = (header[kIdx]||'').replace(/"/g,'').replace(/,/g,'').trim();
+    const dataRows = isNaN(parseFloat(kHead)) ? rows.slice(1) : rows;
+
+    let total = 0, valid = 0, excluded = 0, skipped = 0;
+    for (const row of dataRows) {
+      if (row.length <= maxIdx) { skipped++; continue; }
+      const fVal = (row[fIdx]||'').replace(/"/g,'').trim();
+      const kRaw = (row[kIdx]||'').replace(/"/g,'').replace(/,/g,'').replace(/NT\$?/,'').trim();
+      if (fVal === '已取消') { excluded++; continue; }
+      const amt = parseFloat(kRaw);
+      if (!isNaN(amt)) { total += amt; valid++; }
+      else { valid++; } // blank sub-row: count but no amount
+    }
+
+    // Show results
+    document.getElementById('uploadZone').style.display = 'none';
+    document.getElementById('calcResult').style.display = 'block';
+    document.getElementById('resultFilename').textContent = filename;
+    document.getElementById('validCount').textContent = valid.toLocaleString();
+    document.getElementById('excludedCount').textContent = excluded.toLocaleString();
+    document.getElementById('totalAmount').textContent =
+      'NT$ ' + Math.round(total).toLocaleString();
+    document.getElementById('resultNote').innerHTML =
+      `資料總行數：${dataRows.length} 行　｜　` +
+      `有效：${valid} 行　｜　排除（已取消）：${excluded} 行` +
+      (skipped ? `　｜　略過（欄位不足）：${skipped} 行` : '') +
+      `<br>欄位對應：F 欄（第 ${fIdx+1} 欄）= 訂單狀態　｜　K 欄（第 ${kIdx+1} 欄）= 商品結算金額`;
+  }
+})();
+</script>
+
 <!-- FOOTER -->
 <footer>
   <p>
