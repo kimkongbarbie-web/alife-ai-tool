@@ -446,6 +446,7 @@
       <button class="upload-btn" onclick="document.getElementById('fileInput').click()">選擇檔案</button>
     </div>
     <div class="calc-error" id="calcError" style="display:none">⚠️ <span id="errorMsg"></span></div>
+    <div id="calcDiag" style="display:none;margin-top:12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 16px;font-size:.82rem;color:#166534;font-family:monospace;"></div>
   </div>
 
   <!-- STEP 2: Sidebar + Invoice -->
@@ -709,7 +710,7 @@
   }
 
   function clean(s) { return (s||'').replace(/"/g,'').trim(); }
-  function toNum(s) { return parseFloat(clean(s).replace(/,/g,'')) || 0; }
+  function toNum(s) { return parseFloat(clean(s).replace(/NT\$|\$|,|\s/g,'')) || 0; }
   function fmt(n) { return Math.round(n).toLocaleString('zh-TW'); }
 
   function build(text) {
@@ -754,6 +755,11 @@
 
     _prods = Array.from(map.values());
     _total = total;
+
+    // 診斷訊息：顯示偵測到的欄位與第一筆產品資料
+    const diagInfo = `偵測到：商品名稱=第${nIdx+1}欄、訂單狀態=第${sIdx+1}欄、結算金額=第${kIdx+1}欄 | 共 ${_prods.length} 種商品、總金額 NT$${fmt(_total)}`;
+    document.getElementById('calcDiag').textContent = diagInfo;
+    document.getElementById('calcDiag').style.display = 'block';
 
     const now = new Date();
     const ds = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
