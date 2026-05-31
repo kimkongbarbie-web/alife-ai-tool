@@ -716,33 +716,46 @@
     const rows = parseCSV(text);
     if (rows.length < 2) { showErr('CSV 內容是空的，請確認檔案'); return; }
 
-    const hdr = rows[0];
+    // Find header row (scan first 5 rows for keyword density)
+    let hdrIdx = 0;
+    for (let ri = 0; ri < Math.min(5, rows.length); ri++) {
+      const score = rows[ri].filter(c => /訂單|商品|狀態|金額|數量|結算/.test(clean(c))).length;
+      if (score >= 2) { hdrIdx = ri; break; }
+    }
+    const hdr = rows[hdrIdx];
     let nIdx=4, qIdx=6, pIdx=-1, sIdx=5, kIdx=10;
     hdr.forEach((h,i) => {
       const c = clean(h);
-      if (/^(商品名稱|品名)$/.test(c)) nIdx=i;
-      if (/^(數量|商品數量)$/.test(c)) qIdx=i;
-      if (/^(訂單狀態|狀態)$/.test(c)) sIdx=i;
-      if (/^(商品結算金額|結算金額)$/.test(c)) kIdx=i;
-      if (/^(單價|商品單價|售價|商品金額|團購價格)$/.test(c)) pIdx=i;
+      if (/商品名稱|品名/.test(c)) nIdx=i;
+      if (/^(數量|商品數量|件數)$/.test(c)) qIdx=i;
+      if (/訂單狀態|出貨狀態|狀態/.test(c)) sIdx=i;
+      if (/結算金額/.test(c)) kIdx=i;
+      if (/^(單價|商品單價|售價|商品金額|團購價格|原價|定價)$/.test(c)) pIdx=i;
     });
 
     const isHdr = isNaN(parseFloat(clean(hdr[kIdx]).replace(/,/g,'')));
-    const data  = isHdr ? rows.slice(1) : rows;
+    const data  = isHdr ? rows.slice(hdrIdx + 1) : rows;
     const map   = new Map();
     let total   = 0;
 
     for (const row of data) {
       if (clean(row[sIdx]) === '已取消') continue;
       const name = clean(row[nIdx]); if (!name) continue;
-      const qty  = Math.max(1, parseInt(clean(row[qIdx])) || 1);
       const k    = toNum(row[kIdx]);
+      const qty  = Math.max(1, parseInt(clean(row[qIdx])) || 1);
       const pr   = pIdx >= 0 ? toNum(row[pIdx]) : 0;
-      if (!map.has(name)) map.set(name, { name, qty:0, sub:0, pr });
+      if (!map.has(name)) map.set(name, { name, qty:0, sub:0, pr:0 });
       const p = map.get(name);
-      p.qty += qty; p.sub += k;
-      if (!p.pr && pr) p.pr = pr;
+      p.sub += k;
       total += k;
+      // 只有 K > 0 的行才計入數量與單價（避免子行干擾）
+      if (k > 0) {
+        p.qty += qty;
+        if (!p.pr) {
+          if (pr > 0) p.pr = Math.round(pr);
+          else p.pr = Math.round(k / qty); // 從本行直接算：單價 = 結算額 ÷ 數量
+        }
+      }
     }
     for (const [,p] of map) if (!p.pr && p.qty>0) p.pr = Math.round(p.sub/p.qty);
 
