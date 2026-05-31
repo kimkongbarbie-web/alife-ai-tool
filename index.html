@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alison AI 工具集｜智能電商助理</title>
+  <style>
+    :root {
+      --pink: #f472b6;
+      --pink-light: #fce7f3;
+      --pink-dark: #be185d;
+      --purple: #a855f7;
+      --purple-light: #f3e8ff;
+      --dark: #1e1b2e;
+      --gray: #6b7280;
+      --light: #fafafa;
+      --white: #ffffff;
+      --card-shadow: 0 4px 24px rgba(244,114,182,0.10);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      background: var(--light);
+      color: var(--dark);
+      line-height: 1.7;
+    }
+
+    /* ─── NAV ─── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid #fce7f3;
+      padding: 0 5vw;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 64px;
+    }
+    .logo { font-size: 1.3rem; font-weight: 800; color: var(--pink-dark); letter-spacing: -0.5px; }
+    .logo span { color: var(--purple); }
+    nav ul { list-style: none; display: flex; gap: 2rem; }
+    nav ul a { text-decoration: none; color: var(--gray); font-size: 0.95rem; font-weight: 500; transition: color .2s; }
+    nav ul a:hover { color: var(--pink-dark); }
+
+    /* ─── HERO ─── */
+    .hero {
+      text-align: center;
+      padding: 90px 5vw 70px;
+      background: linear-gradient(135deg, #fff5fb 0%, #f8f0ff 50%, #fef3ff 100%);
+      position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 70% 30%, rgba(168,85,247,0.08) 0%, transparent 60%),
+                  radial-gradient(ellipse at 20% 80%, rgba(244,114,182,0.10) 0%, transparent 50%);
+    }
+    .hero-badge {
+      display: inline-block;
+      background: linear-gradient(90deg, #fce7f3, #ede9fe);
+      color: var(--pink-dark);
+      font-size: 0.8rem; font-weight: 700; letter-spacing: 1px;
+      padding: 6px 16px; border-radius: 99px;
+      margin-bottom: 24px;
+      border: 1px solid #fbcfe8;
+    }
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.4rem);
+      font-weight: 900; line-height: 1.2;
+      background: linear-gradient(135deg, #be185d, #7c3aed);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      margin-bottom: 20px;
+    }
+    .hero p {
+      font-size: 1.15rem; color: var(--gray);
+      max-width: 560px; margin: 0 auto 36px;
+    }
+    .hero-btns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+    .btn-primary {
+      background: linear-gradient(135deg, #ec4899, #a855f7);
+      color: white; padding: 14px 32px; border-radius: 99px;
+      font-weight: 700; font-size: 1rem; text-decoration: none;
+      box-shadow: 0 4px 18px rgba(236,72,153,0.35);
+      transition: transform .2s, box-shadow .2s;
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(236,72,153,0.45); }
+    .btn-secondary {
+      background: white; color: var(--pink-dark);
+      padding: 14px 32px; border-radius: 99px;
+      font-weight: 700; font-size: 1rem; text-decoration: none;
+      border: 2px solid #fbcfe8;
+      transition: border-color .2s, background .2s;
+    }
+    .btn-secondary:hover { border-color: var(--pink); background: var(--pink-light); }
+
+    /* ─── STATS ─── */
+    .stats {
+      display: flex; justify-content: center; gap: 3rem; flex-wrap: wrap;
+      padding: 40px 5vw;
+      background: white;
+      border-bottom: 1px solid #fce7f3;
+    }
+    .stat { text-align: center; }
+    .stat-num { font-size: 2rem; font-weight: 900; color: var(--pink-dark); }
+    .stat-label { font-size: 0.85rem; color: var(--gray); margin-top: 2px; }
+
+    /* ─── SECTION ─── */
+    section { padding: 80px 5vw; }
+    .section-title {
+      text-align: center; margin-bottom: 12px;
+      font-size: clamp(1.5rem, 3vw, 2.2rem); font-weight: 800;
+    }
+    .section-sub {
+      text-align: center; color: var(--gray);
+      margin-bottom: 52px; font-size: 1.05rem;
+    }
+
+    /* ─── TOOL CARDS ─── */
+    .tools { background: var(--light); }
+    .tool-card {
+      background: white;
+      border-radius: var(--radius);
+      box-shadow: var(--card-shadow);
+      padding: 48px;
+      margin-bottom: 36px;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 48px;
+      align-items: center;
+      border: 1px solid #fce7f3;
+      transition: box-shadow .3s;
+    }
+    .tool-card:hover { box-shadow: 0 8px 40px rgba(244,114,182,0.18); }
+    .tool-card.reverse { direction: rtl; }
+    .tool-card.reverse > * { direction: ltr; }
+
+    .tool-tag {
+      display: inline-block;
+      padding: 4px 14px; border-radius: 99px;
+      font-size: 0.78rem; font-weight: 700; letter-spacing: 0.5px;
+      margin-bottom: 14px;
+    }
+    .tag-pink { background: var(--pink-light); color: var(--pink-dark); }
+    .tag-purple { background: var(--purple-light); color: #6d28d9; }
+
+    .tool-title { font-size: 1.7rem; font-weight: 800; margin-bottom: 12px; }
+    .tool-desc { color: var(--gray); margin-bottom: 24px; font-size: 1rem; }
+    .feature-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .feature-list li { display: flex; align-items: flex-start; gap: 10px; font-size: 0.95rem; }
+    .feature-list li::before {
+      content: '✓'; flex-shrink: 0; margin-top: 2px;
+      width: 20px; height: 20px; border-radius: 50%;
+      background: linear-gradient(135deg, #ec4899, #a855f7);
+      color: white; font-size: 0.7rem; font-weight: 900;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* ─── MOCK SCREEN ─── */
+    .mock-screen {
+      background: var(--dark);
+      border-radius: 14px;
+      padding: 0;
+      overflow: hidden;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.20);
+    }
+    .mock-topbar {
+      background: #2d2a3e;
+      padding: 10px 16px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .mock-dot { width: 12px; height: 12px; border-radius: 50%; }
+    .mock-dot.red { background: #ff5f56; }
+    .mock-dot.yellow { background: #ffbd2e; }
+    .mock-dot.green { background: #27c93f; }
+    .mock-title-bar {
+      margin-left: 10px; font-size: 0.78rem; color: #9ca3af;
+      font-family: monospace;
+    }
+    .mock-body { padding: 22px 24px; font-family: monospace; font-size: 0.82rem; line-height: 1.8; }
+    .mock-line { color: #e5e7eb; }
+    .mock-line.cmd { color: #a78bfa; }
+    .mock-line.header { color: #f9a8d4; font-weight: 700; font-size: 0.88rem; }
+    .mock-line.stat { color: #6ee7b7; }
+    .mock-line.warn { color: #fcd34d; }
+    .mock-line.muted { color: #6b7280; }
+    .mock-line.pink { color: #f9a8d4; }
+    .mock-line.dim { color: #4b5563; font-size: 0.75rem; }
+
+    /* ─── HOW IT WORKS ─── */
+    .how { background: linear-gradient(135deg, #fff5fb, #f8f0ff); }
+    .steps {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 28px;
+    }
+    .step {
+      background: white; border-radius: var(--radius);
+      padding: 32px 26px; text-align: center;
+      border: 1px solid #fce7f3;
+      box-shadow: var(--card-shadow);
+    }
+    .step-num {
+      width: 48px; height: 48px; border-radius: 50%;
+      background: linear-gradient(135deg, #ec4899, #a855f7);
+      color: white; font-weight: 900; font-size: 1.2rem;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 16px;
+    }
+    .step h3 { font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
+    .step p { font-size: 0.9rem; color: var(--gray); }
+
+    /* ─── TECH STACK ─── */
+    .tech { background: white; }
+    .tech-grid {
+      display: flex; justify-content: center; flex-wrap: wrap; gap: 20px;
+    }
+    .tech-item {
+      background: var(--light); border: 1px solid #e5e7eb;
+      border-radius: 12px; padding: 16px 24px;
+      font-size: 0.9rem; font-weight: 600; color: var(--dark);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .tech-icon { font-size: 1.4rem; }
+
+    /* ─── FOOTER ─── */
+    footer {
+      background: var(--dark); color: #9ca3af;
+      text-align: center; padding: 36px 5vw;
+      font-size: 0.88rem;
+    }
+    footer strong { color: var(--pink); }
+    footer a { color: var(--pink); text-decoration: none; }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 768px) {
+      .tool-card { grid-template-columns: 1fr; padding: 32px 24px; }
+      .tool-card.reverse { direction: ltr; }
+      nav ul { display: none; }
+      .stats { gap: 2rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="logo">Alison <span>AI</span></div>
+  <ul>
+    <li><a href="#tools">工具介紹</a></li>
+    <li><a href="#how">使用方式</a></li>
+    <li><a href="#tech">技術架構</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-badge">A'life 美妝代購 × Claude AI</div>
+  <h1>智能電商 AI 助理<br>讓日常工作自動化</h1>
+  <p>結合 Claude AI 與 Python 自動化腳本，打造專屬美妝代購業務的智慧工具，節省每天數小時的手動作業時間。</p>
+  <div class="hero-btns">
+    <a href="#tools" class="btn-primary">查看工具介紹</a>
+    <a href="#how" class="btn-secondary">了解使用方式</a>
+  </div>
+</section>
+
+<!-- STATS -->
+<div class="stats">
+  <div class="stat">
+    <div class="stat-num">2</div>
+    <div class="stat-label">AI 自動化工具</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">每日</div>
+    <div class="stat-label">自動生成早晨日報</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">秒算</div>
+    <div class="stat-label">KOL 結算金額</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">100%</div>
+    <div class="stat-label">本機執行，資料不外洩</div>
+  </div>
+</div>
+
+<!-- TOOLS -->
+<section class="tools" id="tools">
+  <h2 class="section-title">兩大核心工具</h2>
+  <p class="section-sub">專為電商日常業務設計，整合訂單、郵件、行事曆、合作帳單</p>
+
+  <!-- Tool 1: Morning Report -->
+  <div class="tool-card">
+    <div class="tool-info">
+      <span class="tool-tag tag-pink">☀️ 每日晨報</span>
+      <h3 class="tool-title">/morning<br>智能早晨日報</h3>
+      <p class="tool-desc">
+        每天早上一個指令，自動彙整 Gmail 訂單通知、待回覆郵件、Google 行事曆，
+        產出結構化的繁體中文晨報，讓你在喝咖啡的時間掌握全局。
+      </p>
+      <ul class="feature-list">
+        <li>自動抓取昨日 Shopline 訂單數與總營收</li>
+        <li>品項銷售排行（前 15 名，依數量排序）</li>
+        <li>多帳號 Gmail 收寄信統計</li>
+        <li>標記需要人工回覆的非自動信件</li>
+        <li>昨日 &amp; 今日行事曆事件一覽</li>
+        <li>AI 自動生成今日業務建議</li>
+      </ul>
+    </div>
+    <div class="mock-screen">
+      <div class="mock-topbar">
+        <div class="mock-dot red"></div>
+        <div class="mock-dot yellow"></div>
+        <div class="mock-dot green"></div>
+        <span class="mock-title-bar">Claude Code — /morning</span>
+      </div>
+      <div class="mock-body">
+        <div class="mock-line cmd">$ /morning</div>
+        <div class="mock-line muted">正在抓取資料...</div>
+        <div class="mock-line" style="margin-top:8px"></div>
+        <div class="mock-line header">☀️ 早晨日報 — 2026-06-01</div>
+        <div class="mock-line" style="margin-top:6px"></div>
+        <div class="mock-line pink">📦 昨日訂單總覽</div>
+        <div class="mock-line stat">　訂單數：47 筆</div>
+        <div class="mock-line stat">　總營收：NT$68,350</div>
+        <div class="mock-line" style="margin-top:4px"></div>
+        <div class="mock-line pink">🏆 銷售排行 Top 3</div>
+        <div class="mock-line">　精華液（30ml） 23件 $34,500</div>
+        <div class="mock-line">　卸妝水（200ml）18件 $14,400</div>
+        <div class="mock-line">　防曬乳 SPF50+  11件 $9,900</div>
+        <div class="mock-line" style="margin-top:4px"></div>
+        <div class="mock-line pink">📬 郵件摘要</div>
+        <div class="mock-line">　收件 412 封 / 寄件 8 封</div>
+        <div class="mock-line warn">　⚠️ 待回覆：3 封</div>
+        <div class="mock-line" style="margin-top:4px"></div>
+        <div class="mock-line pink">🎯 今日行程</div>
+        <div class="mock-line">　14:00 直播備貨確認</div>
+        <div class="mock-line">　16:30 廠商對帳</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tool 2: KOL Settle -->
+  <div class="tool-card reverse">
+    <div class="tool-info">
+      <span class="tool-tag tag-purple">📊 結算工具</span>
+      <h3 class="tool-title">/kol-settle<br>KOL 結算金額計算</h3>
+      <p class="tool-desc">
+        只需把 HB 社群賣場匯出的 CSV 拖進對話，AI 自動計算 K 欄商品結算金額總和，
+        智慧排除「已取消」訂單，即時給出有效筆數與總金額。
+      </p>
+      <ul class="feature-list">
+        <li>讀取 CSV 的 K 欄（商品結算金額）</li>
+        <li>自動排除 F 欄標示「已取消」的訂單</li>
+        <li>空白狀態子行正確保留計入</li>
+        <li>回報有效行數、排除行數、K 欄總金額</li>
+        <li>無需安裝任何軟體，直接在 Claude 對話中操作</li>
+        <li>支援任意行數，千筆資料秒速計算</li>
+      </ul>
+    </div>
+    <div class="mock-screen">
+      <div class="mock-topbar">
+        <div class="mock-dot red"></div>
+        <div class="mock-dot yellow"></div>
+        <div class="mock-dot green"></div>
+        <span class="mock-title-bar">Claude Code — /kol-settle</span>
+      </div>
+      <div class="mock-body">
+        <div class="mock-line cmd">$ /kol-settle</div>
+        <div class="mock-line muted">（附上 CSV 檔案）</div>
+        <div class="mock-line" style="margin-top:8px"></div>
+        <div class="mock-line header">📊 KOL 結算計算結果</div>
+        <div class="mock-line" style="margin-top:6px"></div>
+        <div class="mock-line pink">📋 資料概況</div>
+        <div class="mock-line">　CSV 總行數：856 行</div>
+        <div class="mock-line stat">　有效行數：　782 行</div>
+        <div class="mock-line warn">　排除行數：　74 行（已取消）</div>
+        <div class="mock-line" style="margin-top:8px"></div>
+        <div class="mock-line pink">💰 K 欄結算總金額</div>
+        <div class="mock-line stat" style="font-size:1rem; font-weight:700;">
+          　NT$ 124,680
+        </div>
+        <div class="mock-line" style="margin-top:8px"></div>
+        <div class="mock-line dim">排除規則：F欄 = "已取消"</div>
+        <div class="mock-line dim">空白狀態子行已保留計入</div>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how" id="how">
+  <h2 class="section-title">使用方式</h2>
+  <p class="section-sub">只需要 Claude Code，不需要任何額外設定</p>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <h3>開啟 Claude Code</h3>
+      <p>在終端機輸入 <code>claude</code> 啟動 Claude Code 互動介面</p>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <h3>輸入指令</h3>
+      <p>輸入 <code>/morning</code> 取得晨報，或 <code>/kol-settle</code> 計算結算金額</p>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <h3>附上檔案（KOL）</h3>
+      <p>使用 /kol-settle 時，將 CSV 檔案拖曳到對話視窗即可</p>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <h3>取得結果</h3>
+      <p>AI 自動處理並以繁體中文格式化輸出，可直接複製使用</p>
+    </div>
+  </div>
+</section>
+
+<!-- TECH STACK -->
+<section class="tech" id="tech">
+  <h2 class="section-title">技術架構</h2>
+  <p class="section-sub">本機執行，資料完全不離開你的電腦</p>
+  <div class="tech-grid">
+    <div class="tech-item"><span class="tech-icon">🤖</span>Claude AI (Sonnet 4.6)</div>
+    <div class="tech-item"><span class="tech-icon">🐍</span>Python 3.13</div>
+    <div class="tech-item"><span class="tech-icon">📧</span>Gmail IMAP API</div>
+    <div class="tech-item"><span class="tech-icon">📅</span>Google Calendar ICS</div>
+    <div class="tech-item"><span class="tech-icon">🛒</span>Shopline 訂單解析</div>
+    <div class="tech-item"><span class="tech-icon">💻</span>Claude Code CLI</div>
+    <div class="tech-item"><span class="tech-icon">📊</span>CSV 資料處理</div>
+    <div class="tech-item"><span class="tech-icon">🔒</span>本機執行（無雲端上傳）</div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <p>
+    Made with ❤️ by <strong>Alison</strong> ×
+    <a href="https://claude.ai" target="_blank">Claude AI</a>
+  </p>
+  <p style="margin-top: 8px; font-size:0.8rem;">
+    A'life 美妝代購 專屬 AI 自動化工具 · 2026
+  </p>
+</footer>
+
+</body>
+</html>
